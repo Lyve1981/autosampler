@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace autosampler
+namespace asLib
 {
 	class AudioData
 	{

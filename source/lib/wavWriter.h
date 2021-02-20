@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace autosampler
+namespace asLib
 {
 // TODO: gcc and others
 #pragma pack(push, 1)

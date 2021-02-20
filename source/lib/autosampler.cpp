@@ -23,6 +23,8 @@
 
 #include "../portmidi/pm_common/portmidi.h"
 
+namespace asLib
+{
 static int portAudioCallback(const void* _inputBuffer, void*, const unsigned long _framesPerBuffer, const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void* _userData)
 {
 	auto* sampler = static_cast<AutoSampler*>(_userData);
@@ -200,7 +202,7 @@ void AutoSampler::initAudioInput()
 	
 	m_samplerate = static_cast<float>(streamInfo->sampleRate);
 
-	m_audioData.reset(new autosampler::AudioData(inputParameters.sampleFormat, inputParameters.channelCount));
+	m_audioData.reset(new AudioData(inputParameters.sampleFormat, inputParameters.channelCount));
 }
 
 void AutoSampler::initMidiOutput()
@@ -288,7 +290,7 @@ void AutoSampler::setState(State _state)
 				{
 					auto program = m_config.programChanges[m_currentProgram];
 					LOG("Sending program change " << static_cast<int>(program));
-					sendMidi(autosampler::M_PROGRAMCHANGE, program, 0);
+					sendMidi(M_PROGRAMCHANGE, program, 0);
 				}
 			}
 		}
@@ -296,11 +298,11 @@ void AutoSampler::setState(State _state)
 	case Sustain:
 		LOG("Entering sustain stage");
 		m_audioData->clear();
-		sendMidi(autosampler::M_NOTEON, m_config.noteNumbers[m_currentNote], m_config.velocities[m_currentVelocity]);
+		sendMidi(M_NOTEON, m_config.noteNumbers[m_currentNote], m_config.velocities[m_currentVelocity]);
 		break;
 	case Release:
 		LOG("Entering release stage");
-		sendMidi(autosampler::M_NOTEOFF, m_config.noteNumbers[m_currentNote], m_config.releaseVelocity);
+		sendMidi(M_NOTEOFF, m_config.noteNumbers[m_currentNote], m_config.releaseVelocity);
 		break;
 	case PauseAfter:
 		{
@@ -318,7 +320,7 @@ void AutoSampler::setState(State _state)
 	}
 }
 
-void AutoSampler::writeWaveFile(autosampler::AudioData* _data, int _program, int _note, int _velocity)
+void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _velocity)
 {
 	_program = m_config.programChanges[_program];
 	_note = m_config.noteNumbers[_note];
@@ -409,4 +411,5 @@ bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)
 	}
 
 	return true;	// want more
+}
 }

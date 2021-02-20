@@ -3,7 +3,7 @@
 
 #include "../portaudio/include/portaudio.h"
 
-void autosampler::AudioData::append(const void* _data, size_t _lengthInFrames)
+void asLib::AudioData::append(const void* _data, size_t _lengthInFrames)
 {
 	const auto oldSize = m_buffer.size();
 	const auto appendSize = bytesPerFrame() * _lengthInFrames;
@@ -14,7 +14,7 @@ void autosampler::AudioData::append(const void* _data, size_t _lengthInFrames)
 	::memcpy(&m_buffer[oldSize], _data, appendSize);
 }
 
-bool autosampler::AudioData::removeAt(size_t _frame, size_t _count)
+bool asLib::AudioData::removeAt(size_t _frame, size_t _count)
 {
 	const auto byteOffset = _frame * bytesPerFrame();
 	const auto byteRemoveSize = _count * bytesPerFrame();
@@ -32,7 +32,7 @@ bool autosampler::AudioData::removeAt(size_t _frame, size_t _count)
 	return true;
 }
 
-float autosampler::AudioData::floatValue(size_t _frame, size_t _channel) const
+float asLib::AudioData::floatValue(size_t _frame, size_t _channel) const
 {
 	if(_channel >= m_channelCount)
 		return 0.0f;
@@ -89,7 +89,7 @@ float autosampler::AudioData::floatValue(size_t _frame, size_t _channel) const
 	}	
 }
 
-void autosampler::AudioData::trimStart(float _maxValue)
+void asLib::AudioData::trimStart(float _maxValue)
 {
 	if(empty())
 		return;
@@ -130,7 +130,7 @@ void autosampler::AudioData::trimStart(float _maxValue)
 		m_buffer.erase(m_buffer.begin(), m_buffer.begin() + bytesToRemove);
 }
 
-void autosampler::AudioData::trimEnd(float _maxValue)
+void asLib::AudioData::trimEnd(float _maxValue)
 {
 	if(empty())
 		return;
@@ -168,24 +168,24 @@ void autosampler::AudioData::trimEnd(float _maxValue)
 	m_buffer.resize(newSize);
 }
 
-size_t autosampler::AudioData::bytesPerSample() const
+size_t asLib::AudioData::bytesPerSample() const
 {
 	return Pa_GetSampleSize(m_format);
 }
 
-autosampler::AudioData* autosampler::AudioData::clone()
+asLib::AudioData* asLib::AudioData::clone()
 {
 	auto* clone = new AudioData(m_format, m_channelCount);
 	clone->m_buffer.assign(m_buffer.begin(), m_buffer.end());
 	return clone;
 }
 
-int autosampler::AudioData::getBitsPerSample() const
+int asLib::AudioData::getBitsPerSample() const
 {
 	return bytesPerSample() << 3;
 }
 
-bool autosampler::AudioData::getIsFloat() const
+bool asLib::AudioData::getIsFloat() const
 {
 	return m_format == paFloat32;
 }

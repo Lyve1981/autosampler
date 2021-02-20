@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+namespace asLib
+{
 struct Config
 {
 	// Audio Input
@@ -35,3 +37,4 @@ struct Config
 	// I/O
 	std::string filename;
 };
+}

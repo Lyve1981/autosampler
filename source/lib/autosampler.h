@@ -3,6 +3,8 @@
 #include "audioData.h"
 #include "config.h"
 
+namespace asLib
+{
 class AutoSampler
 {
 	enum State
@@ -22,7 +24,7 @@ public:
 	void run();
 	bool audioInputCallback(const void* _input, size_t _frameCount);
 
-	void writeWaveFile(autosampler::AudioData* _data, int _program, int _note, int _velocity);
+	void writeWaveFile(AudioData* _data, int _program, int _note, int _velocity);
 	
 private:
 	void initAudioInput();
@@ -36,7 +38,7 @@ private:
 
 	float m_samplerate;
 
-	std::unique_ptr<autosampler::AudioData> m_audioData;
+	std::unique_ptr<AudioData> m_audioData;
 
 	State m_state = Invalid;
 

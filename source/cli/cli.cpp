@@ -11,14 +11,14 @@ int main(int argc, char* argv[])
 {
 	try
 	{
-		Config config;
+		asLib::Config config;
 
 		config.inputHostApi = "Windows DirectSound";
 		config.inputDevice = "Eingang (High Definition Audio Device)";
 
 		config.midiOutputDevice = "MIDIOUT2 (BCR2000)";
 
-		for(size_t n=autosampler::Note_C0; n<autosampler::Note_C7; ++n)
+		for(uint8_t n=asLib::Note_C0; n<=asLib::Note_D0; ++n)
 			config.noteNumbers.push_back(n);
 
 		config.detectNoisefloorDuration = 5.0f;
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
 
 		config.filename = "F:\\Samples\\Instruments\\U-110\\P{program}_V{velocity}\\{note}_{key}.wav";
 
-		AutoSampler autosampler(config);
+		asLib::AutoSampler autosampler(config);
 
 		autosampler.run();
 

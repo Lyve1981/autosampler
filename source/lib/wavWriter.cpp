@@ -6,7 +6,7 @@
 #include <map>
 #include <cassert>
 
-namespace autosampler
+namespace asLib
 {
 bool WavWriter::write(const std::string & _filename, const std::vector<uint8_t>& data, int _bitsPerSample, bool _isFloat, int _channelCount, int _samplerate, std::vector<CuePoint>* _cuePoints /*= nullptr*/)
 {

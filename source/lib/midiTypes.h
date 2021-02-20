@@ -1,6 +1,6 @@
 #pragma once
 
-namespace autosampler
+namespace asLib
 {
 	// MIDI status bytes
 	enum MidiStatusByte
