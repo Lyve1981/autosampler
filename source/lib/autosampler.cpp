@@ -125,6 +125,12 @@ AutoSampler::~AutoSampler()
 		m_inputStream = nullptr;		
 	}
 
+	if(m_outputStream)
+	{
+		Pm_Close(m_outputStream);
+		m_outputStream = nullptr;
+	}
+
 	Pm_Terminate();
 	Pa_Terminate();
 }
