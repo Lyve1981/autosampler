@@ -302,15 +302,16 @@ void AutoSampler::setState(State _state)
 		break;
 	case PauseBefore:
 		m_audioData->clear();
-		++m_currentVelocity;
-		if(m_currentVelocity >= m_config.velocities.size())
-		{
-			m_currentVelocity = 0;
-			++m_currentNote;
+		++m_currentNote;
 
-			if(m_currentNote >= m_config.noteNumbers.size())
+		if(m_currentNote >= m_config.noteNumbers.size())
+		{
+			m_currentNote = 0;
+			++m_currentVelocity;
+
+			if(m_currentVelocity >= m_config.velocities.size())
 			{
-				m_currentNote = 0;
+				m_currentVelocity = 0;
 				++m_currentProgram;
 
 				if(!m_config.programChanges.empty())
