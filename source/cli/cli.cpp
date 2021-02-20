@@ -49,7 +49,7 @@ int Cli::run()
 			"{key} Note a human readable string like C#4. F#3, range is C-2 to G8\n "
 			"{velocity} Velocity in range 0-127\n "
 			"{program} Program change in range 0-127"
-			, true, {"\n~/autosampler/device/patch{program}/{note}_{key}_{velocity}.wav"});
+			, true, {"~/autosampler/device/patch{program}/{note}_{key}_{velocity}.wav"});
 
 		// further validation
 		if(m_config.filename.empty())
@@ -180,7 +180,7 @@ void Cli::printUsage()
 	<< std::endl
 	<< "Usage:" << std::endl
 	<< std::endl
-	<< "All arguments need to be specified in form -arg=value." << std::endl
+	<< "All arguments need to be specified in form -arg value" << std::endl
 	<< std::endl
 	<< "Possible arguments:"
 	<< std::endl;
