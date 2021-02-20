@@ -303,15 +303,18 @@ void AutoSampler::setState(State _state)
 				m_currentNote = 0;
 				++m_currentProgram;
 
-				if(m_currentProgram >= m_config.programChanges.size())
+				if(!m_config.programChanges.empty())
 				{
-					setState(Finished);
-				}
-				else
-				{
-					auto program = m_config.programChanges[m_currentProgram];
-					LOG("Sending program change " << static_cast<int>(program));
-					sendMidi(M_PROGRAMCHANGE, program, 0);
+					if(m_currentProgram >= m_config.programChanges.size())
+					{
+						setState(Finished);
+					}
+					else
+					{
+						auto program = m_config.programChanges[m_currentProgram];
+						LOG("Sending program change " << static_cast<int>(program));
+						sendMidi(M_PROGRAMCHANGE, program, 0);
+					}
 				}
 			}
 		}
@@ -352,7 +355,7 @@ void AutoSampler::setState(State _state)
 
 void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _velocity)
 {
-	_program = m_config.programChanges[_program];
+	_program = m_config.programChanges.empty() ? 0 : m_config.programChanges[_program];
 	_note = m_config.noteNumbers[_note];
 	_velocity = m_config.velocities[_velocity];
 
