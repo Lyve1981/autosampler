@@ -3,17 +3,18 @@
 #include <sstream>
 #include <string>
 
-#ifdef _WIN32
+namespace asBase
+{
 
+#ifdef _WIN32
 	void g_logWin32( const std::string& _s );
 
-	#define LOGWIN32(ss)	{ g_logWin32( (ss).str() ); }
+	#define LOGWIN32(ss)	{ asBase::g_logWin32( (ss).str() ); }
 #else
 	void g_logUnix( const std::string& _s );
-	#define LOGWIN32(ss)	{ g_logUnix( (ss).str() ); }
-#endif
 
-//#ifndef _MASTER_BUILD
+	#define DO_LOG(ss)		{ asBase::g_logUnix( (ss).str() ); }
+#endif
 
 #define LOG(S)																												\
 {																															\
@@ -22,6 +23,4 @@
 	LOGWIN32(ss)																											\
 }
 
-//#else
-//	#define LOG(S)	{}
-//#endif
+}

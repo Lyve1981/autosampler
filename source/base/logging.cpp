@@ -1,5 +1,8 @@
 #include "logging.h"
 
+namespace asBase
+{
+
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
@@ -7,7 +10,7 @@
 
 void g_logWin32(const std::string& _s )
 {
-	::OutputDebugStringA( (_s + "\n").c_str() );
+	OutputDebugStringA( (_s + "\n").c_str() );
 	puts(_s.c_str());
 }
 
@@ -20,3 +23,5 @@ void g_logUnix(const std::string& _s )
 }
 
 #endif
+		
+}
