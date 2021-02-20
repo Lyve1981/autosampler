@@ -10,13 +10,15 @@ namespace asLib
 enum ErrorType
 {
 	ErrUnknown = -1,
+	ErrMax = 100,
+
 	ErrNone = 0,
 	ErrInputDeviceNotFound,
 	ErrInvalidInputBitCount,
 	ErrAudioInput,
 	ErrMidiOutputNotFound,
 	ErrMidiOutput,
-	ErrMax = 100,
+	ErrFileIO,
 };
 
 class Error final : public std::exception

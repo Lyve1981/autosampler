@@ -402,7 +402,10 @@ void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _
 		LOG("Writing file " << filename);
 		const auto writeRes = WavWriter::write(filename, _data->data(), _data->getBitsPerSample(), _data->getIsFloat(), static_cast<int>(_data->getChannelCount()), static_cast<int>(m_samplerate), nullptr);
 		if(!writeRes)
+		{
 			LOG("Failed to create file " << filename);
+			throw Error(ErrFileIO, "Failed to create file " + filename);
+		}
 	}
 	else
 	{
