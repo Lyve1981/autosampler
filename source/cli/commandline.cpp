@@ -2,9 +2,11 @@
 
 #include <algorithm>
 
+namespace asCli
+{
 CommandLine* CommandLine::m_instance = nullptr;
 
-CommandLine::CommandLine(int _argc, char** _argv)
+CommandLine::CommandLine(const int _argc, char* _argv[])
 {
 	m_instance = this;
 
@@ -15,8 +17,6 @@ CommandLine::CommandLine(int _argc, char** _argv)
 		std::string arg(_argv[i]);
 		if (arg.empty())
 			continue;
-
-		std::transform(arg.begin(), arg.end(), arg.begin(), ::tolower);
 
 		if (arg[0] == '-')
 		{
@@ -85,4 +85,5 @@ int CommandLine::getInt(const std::string& _key) const
 bool CommandLine::contains(const std::string& _key) const
 {
 	return m_args.find(_key) != m_args.end() || m_argsWithValues.find(_key) != m_argsWithValues.end();
+}
 }

@@ -19,6 +19,6 @@ add_subdirectory(cli)
 
 add_executable(ascli)
 
-target_sources(ascli PRIVATE cli/cli.cpp)
+target_sources(ascli PRIVATE cli/main.cpp)
 
 target_link_libraries(ascli cli)

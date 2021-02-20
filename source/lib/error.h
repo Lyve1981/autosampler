@@ -4,6 +4,9 @@
 #include <sstream>
 #include <string>
 
+namespace asLib
+{
+
 enum ErrorType
 {
 	ErrUnknown = -1,
@@ -26,3 +29,5 @@ public:
 private:
 	const ErrorType m_errorType;
 };
+	
+}

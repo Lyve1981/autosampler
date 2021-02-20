@@ -7,10 +7,12 @@
 #include <set>
 #include <cassert>
 
+namespace asCli
+{
 class CommandLine
 {
 public:
-	CommandLine(int _argc, char** _argv);
+	CommandLine(int _argc, char* _argv[]);
 
 	static CommandLine& getInstance()
 	{
@@ -33,3 +35,4 @@ private:
 	std::set<std::string> m_args;
 	static CommandLine* m_instance;
 };
+}

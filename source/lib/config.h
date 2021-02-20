@@ -21,7 +21,7 @@ struct Config
 
 	// Processing - MIDI
 	std::vector<uint8_t> noteNumbers;
-	std::vector<uint8_t> velocities;
+	std::vector<uint8_t> velocities = {127};
 	std::vector<uint8_t> programChanges;
 	uint8_t releaseVelocity = 0;
 	uint8_t midiChannel = 0;
@@ -30,11 +30,11 @@ struct Config
 	float detectNoisefloorDuration = 2.0f;
 
 	float pauseBefore = 0.5f;
-	float sustainLength = 2.0f;
+	float sustainLength = 3.0f;
 	float releaseLength = 1.0f;
 	float pauseAfter = 0.5f;
 
 	// I/O
-	std::string filename;
+	std::string filename = "";
 };
 }
