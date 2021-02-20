@@ -1,15 +1,27 @@
 # Autosampler
-Autosampler can create multisamples of hardware MIDI devices.
-It opens a MIDI port to send notes and an Audio input to record audio data.
+Autosampler is a command line app that can create multisamples of hardware 
+MIDI devices. It opens a MIDI port to send notes and an Audio input to record audio data.
 
 Audio data is automatically cut & trimmed and written to folders according to
-the 'filename' scheme (see below).
+the filename scheme as specified on the command line (see below).
 
-Usage:
+# Dependencies
+*portaudio* - for audio input
+*portmidi* - for MIDI output
+*cmake* - build system
 
-All arguments need to be specified in form -arg value
+Both of them are included in the repository and are built with the main project
+# Building
+Build system used is cmake. Example to compile on Windows:
 
-Possible arguments:
+    cd source/
+    cmake . -B ../temp/ -G "Visual Studio 15 2017 Win64"
+	cd ../temp/
+	cmake --build . --config Release
+
+# Usage:
+
+All arguments need to be specified in form -arg value. The following parameters are supported:
 
     ai-device             Specify the audio device to be used to capture data. Can be
                           empty in which case the default device is used
@@ -102,4 +114,3 @@ Possible arguments:
     
                           {program} Program change in range 0-127
                           Example: ~/autosampler/device/patch{program}/{note}_{key}_{velocity}.wav
-    
