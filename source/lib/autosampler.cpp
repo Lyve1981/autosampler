@@ -4,6 +4,7 @@
 #include "audioData.h"
 
 #include <algorithm>
+#include <cassert>
 #include <iomanip>
 
 
@@ -73,9 +74,8 @@ void createDirectoryRecursive(const std::string& filename)
 {
 	for(size_t searchPos=0; searchPos < filename.size();)
 	{
-		size_t pos = filename.find('/', searchPos);
-		if(pos == std::string::npos)
-			pos = filename.find('\\', searchPos);
+		size_t pos = filename.find_first_of("/\\", searchPos);
+
 		if(pos == std::string::npos)
 			break;
 
@@ -109,8 +109,8 @@ AutoSampler::AutoSampler(Config _config) : m_config(std::move(_config))
 
 	m_currentProgram = -1;
 
-	m_currentNote = m_config.noteNumbers.size();
-	m_currentVelocity = m_config.velocities.size();
+	m_currentNote = static_cast<int>(m_config.noteNumbers.size());
+	m_currentVelocity = static_cast<int>(m_config.velocities.size());
 
 	setState(DetectNoiseFloor);
 
@@ -139,9 +139,24 @@ void AutoSampler::run()
 {
 	while(true)
 	{
-//		sendMidi(autosampler::M_NOTEON, autosampler::Note_C3, 0x7f);
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-//		sendMidi(autosampler::M_NOTEOFF, autosampler::Note_C3, 0x0);
+		{
+			std::lock_guard<std::mutex> lockPendingWrites(m_lockPendingWrites);
+			for(auto it = m_pendingWrites.begin(); it != m_pendingWrites.end();)
+			{
+				const auto& pendingWrite = it->second;
+
+				if(pendingWrite.data == nullptr)
+				{
+					pendingWrite.thread->join();
+					m_pendingWrites.erase(it++);
+				}
+				else
+					++it;
+			}
+
+			if(m_state == Finished && m_pendingWrites.empty())
+				break;
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	}
 }
@@ -313,11 +328,20 @@ void AutoSampler::setState(State _state)
 	case PauseAfter:
 		{
 			LOG("Entering pause after stage");
-			auto* segment = m_audioData->clone();
-			m_audioData->clear();
-			std::thread* t;
 
-			t = new std::thread(&AutoSampler::writeWaveFile, this, segment, m_currentProgram, m_currentNote, m_currentVelocity);
+			auto* data = m_audioData->clone();
+
+			PendingWrite pendingWrite;
+
+			pendingWrite.data.reset(data);
+			pendingWrite.thread.reset(new std::thread(&AutoSampler::writeWaveFile, this, pendingWrite.data.get(), m_currentProgram, m_currentNote, m_currentVelocity));
+
+			{
+				std::lock_guard<std::mutex> lockPendingWrites(m_lockPendingWrites);
+				m_pendingWrites.insert(std::make_pair(data, pendingWrite));
+			}
+
+			m_audioData->clear();
 		}
 		break;
 	case Finished: 
@@ -356,15 +380,33 @@ void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _
 		strreplace(filename, "{key}", ss.str());
 	}
 
+	
+	const auto splitPos = filename.find_last_of("/\\");
+	const auto file = splitPos != std::string::npos ? filename.substr(splitPos+1) : filename;
+
+	LOG("Trimming file " << file);
+	
 	createDirectoryRecursive(filename);
 
 	_data->trimStart(m_noiseFloor * 1.05f);
 	_data->trimEnd(m_noiseFloor * 1.05f);
 
 	if(!_data->empty())
-		autosampler::WavWriter::write(filename, _data->data(), _data->getBitsPerSample(), _data->getIsFloat(), static_cast<int>(_data->getChannelCount()), static_cast<int>(m_samplerate), nullptr);
+	{
+		LOG("Writing file " << filename);
+		const auto writeRes = WavWriter::write(filename, _data->data(), _data->getBitsPerSample(), _data->getIsFloat(), static_cast<int>(_data->getChannelCount()), static_cast<int>(m_samplerate), nullptr);
+		if(!writeRes)
+			LOG("Failed to create file " << filename);
+	}
+	else
+	{
+		LOG("Skipping file " << filename << " as it is completely silent");
+	}
 
-	delete _data;
+	std::lock_guard<std::mutex> lockPendingWrites(m_lockPendingWrites);
+	auto it = m_pendingWrites.find(_data);
+	assert(it != m_pendingWrites.end());
+	it->second.data.reset();	
 }
 
 bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)

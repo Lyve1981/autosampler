@@ -1,5 +1,10 @@
 #pragma once
 
+#include <map>
+#include <mutex>
+#include <thread>
+
+
 #include "audioData.h"
 #include "config.h"
 
@@ -55,4 +60,14 @@ private:
 	int m_currentProgram = -1;
 
 	float m_noiseFloor = 0.0f;
+
+	struct PendingWrite
+	{
+		std::shared_ptr<std::thread> thread;
+		std::shared_ptr<AudioData> data;
+	};
+
+	std::mutex m_lockPendingWrites;
+	std::map<const AudioData*,PendingWrite> m_pendingWrites;
 };
+}
