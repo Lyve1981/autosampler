@@ -1,4 +1,4 @@
-# autosampler
+# Autosampler
 Autosampler can create multisamples of hardware MIDI devices.
 It opens a MIDI port to send notes and an Audio input to record audio data.
 
