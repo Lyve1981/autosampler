@@ -90,6 +90,17 @@ void createDirectoryRecursive(const std::string& filename)
 	}
 }
 
+std::string noteToString(uint8_t _note)
+{
+	const char* keys[12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+	const auto octave = _note / 12;
+	const auto n = _note - octave * 12;
+
+	std::stringstream ss; ss << keys[n] << (octave - 2);	// C-2 to G8
+	return ss.str();
+}
+
 AutoSampler::AutoSampler(Config _config) : m_config(std::move(_config))
 {
 	Pa_Initialize();
@@ -290,7 +301,6 @@ void AutoSampler::setState(State _state)
 		m_audioData->clear();
 		break;
 	case PauseBefore:
-		LOG("Entering pause before stage");
 		m_audioData->clear();
 		++m_currentVelocity;
 		if(m_currentVelocity >= m_config.velocities.size())
@@ -320,18 +330,24 @@ void AutoSampler::setState(State _state)
 		}
 		break;
 	case Sustain:
-		LOG("Entering sustain stage");
-		m_audioData->clear();
-		sendMidi(M_NOTEON, m_config.noteNumbers[m_currentNote], m_config.velocities[m_currentVelocity]);
+		{
+			m_audioData->clear();
+			auto note = m_config.noteNumbers[m_currentNote];
+			auto velocity = m_config.velocities[m_currentVelocity];
+			LOG("Sending Note ON for note " << noteToString(note) << " (" << static_cast<int>(note) << "), velocity " << static_cast<int>(velocity));
+			sendMidi(M_NOTEON, note, velocity);
+		}
 		break;
 	case Release:
-		LOG("Entering release stage");
-		sendMidi(M_NOTEOFF, m_config.noteNumbers[m_currentNote], m_config.releaseVelocity);
+		{
+			auto note = m_config.noteNumbers[m_currentNote];
+
+			LOG("Sending Note off for note " << noteToString(note) << " (" << static_cast<int>(note) << "), release velocity " << static_cast<int>(m_config.releaseVelocity));
+			sendMidi(M_NOTEOFF, note, m_config.releaseVelocity);
+		}
 		break;
 	case PauseAfter:
 		{
-			LOG("Entering pause after stage");
-
 			auto* data = m_audioData->clone();
 
 			PendingWrite pendingWrite;
@@ -373,22 +389,9 @@ void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _
 		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << _velocity;
 		strreplace(filename, "{velocity}", ss.str());
 	}
-	{
-		const char* keys[12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 
-		const auto octave = _note / 12;
-		const auto n = _note - octave * 12;
+	strreplace(filename, "{key}", noteToString(static_cast<uint8_t>(_note)));
 
-		std::stringstream ss; ss << keys[n] << (octave - 2);	// C-2 to G8
-		strreplace(filename, "{key}", ss.str());
-	}
-
-	
-	const auto splitPos = filename.find_last_of("/\\");
-	const auto file = splitPos != std::string::npos ? filename.substr(splitPos+1) : filename;
-
-	LOG("Trimming file " << file);
-	
 	createDirectoryRecursive(filename);
 
 	_data->trimStart(m_noiseFloor * 1.05f);
