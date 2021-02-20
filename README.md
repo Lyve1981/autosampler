@@ -7,10 +7,13 @@ the filename scheme as specified on the command line (see below).
 
 # Dependencies
 *portaudio* - for audio input
+
 *portmidi* - for MIDI output
+
+Both of them are included in the repository and are built with the main project.
+
 *cmake* - build system
 
-Both of them are included in the repository and are built with the main project
 # Building
 Build system used is cmake. Example to compile on Windows:
 
