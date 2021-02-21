@@ -1,6 +1,10 @@
 #include "audioData.h"
 #include "error.h"
 
+#include <cmath>
+#include <limits>
+#include <memory.h>
+
 #include "../portaudio/include/portaudio.h"
 
 void asLib::AudioData::append(const void* _data, size_t _lengthInFrames)
@@ -102,7 +106,7 @@ void asLib::AudioData::trimStart(float _maxValue)
 	{
 		for(size_t c=0; c<getChannelCount() && !found; ++c)
 		{
-			const float g = std::fabsf(floatValue(f, c));
+			const float g = std::abs(floatValue(f, c));
 
 			if(g >= _maxValue)
 			{
@@ -143,7 +147,7 @@ void asLib::AudioData::trimEnd(float _maxValue)
 	{
 		for(size_t c=0; c<getChannelCount() && !found; ++c)
 		{
-			const float g = std::fabsf(floatValue(f, c));
+			const float g = std::abs(floatValue(f, c));
 
 			if(g >= _maxValue)
 			{

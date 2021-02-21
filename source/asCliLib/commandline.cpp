@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include <math.h>
+
 namespace asCli
 {
 CommandLine* CommandLine::m_instance = nullptr;
@@ -58,7 +60,7 @@ std::string CommandLine::get(const std::string& _key) const
 	{
 		const std::string msg = "ERROR: command line argument " + _key + " has no value";
 		LOG(msg)
-		throw std::exception(msg.c_str());
+		throw std::runtime_error(msg.c_str());
 	}
 	return it->second;
 }
@@ -71,7 +73,7 @@ float CommandLine::getFloat(const std::string& _key) const
 	{
 		const std::string msg = "ERROR: invalid value " + stringResult + " for argument " + _key;
 		LOG(msg)
-		throw std::exception(msg.c_str());
+		throw std::runtime_error(msg.c_str());
 	}
 	return static_cast<float>(result);
 }

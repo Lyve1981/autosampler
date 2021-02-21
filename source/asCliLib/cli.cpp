@@ -10,6 +10,56 @@
 
 namespace asCli
 {
+template <> std::vector<uint8_t> parse<std::vector<uint8_t>>(const std::string& _input)
+{
+	std::vector<uint8_t> target;
+
+	std::istringstream ssCommas(_input);
+
+	std::string sCommas;
+
+	while(std::getline(ssCommas,sCommas,','))
+	{	
+		std::istringstream ssSemis(sCommas);
+		std::string sSemis;
+		while(std::getline(ssSemis,sSemis,';'))
+		{	
+			std::istringstream ssMinus(sSemis);
+			std::string sMinus;
+
+			std::vector<uint8_t> tempArgs;
+			while(std::getline(ssMinus,sMinus,'-'))
+			{
+				int arg;
+				std::stringstream ssArg(sMinus);
+				ssArg >> arg;
+				tempArgs.push_back(static_cast<uint8_t>(arg));
+			}
+			if(tempArgs.empty())
+				continue;	// be nice
+			if(tempArgs.size() == 1)
+				target.push_back(tempArgs[0]);
+			else if(tempArgs.size() == 2)
+			{
+				const auto start = std::min(tempArgs[0], tempArgs[1]);
+				const auto end = std::max(tempArgs[0], tempArgs[1]);
+				if(start == end)
+					target.push_back(start);
+				else
+					for(auto i=start; i<=end; ++i)
+						target.push_back(i);
+			}
+			else
+			{
+				// but don't be nice here
+				throw std::runtime_error((std::string("Invalid argument ") + sSemis + ", expected range in form x-y").c_str());
+			}
+		}
+	}
+	
+	return target;
+}
+
 Cli::Cli(int argc, char* argv[]) : m_commandLine(argc, argv)
 {
 }
@@ -55,24 +105,24 @@ int Cli::run()
 
 		// further validation
 		if(m_config.filename.empty())
-			throw std::exception("Filename must not be empty");
+			throw std::runtime_error("Filename must not be empty");
 
 		for (auto note : m_config.noteNumbers)
 		{
 			if(note > 127)
-				throw std::exception("Notes must be in range 0-127");	
+				throw std::runtime_error("Notes must be in range 0-127");	
 		}
 
 		for (auto v : m_config.velocities)
 		{
 			if(v > 127)
-				throw std::exception("Velocity values must be in range 0-127");
+				throw std::runtime_error("Velocity values must be in range 0-127");
 		}
 
 		for (auto p : m_config.programChanges)
 		{
 			if(p > 127)
-				throw std::exception("Program changes must be in range 0-127");
+				throw std::runtime_error("Program changes must be in range 0-127");
 		}
 	}
 	catch (const std::exception& e)
@@ -119,56 +169,6 @@ int Cli::run()
 		std::cerr << "Error " << e.getErrorType() << ": " << e.what() << std::endl;
 		return e.getErrorType();
 	}
-}
-
-template <> std::vector<uint8_t> Cli::parse<std::vector<uint8_t>>(const std::string& _input)
-{
-	std::vector<uint8_t> target;
-
-	std::istringstream ssCommas(_input);
-
-	std::string sCommas;
-
-	while(std::getline(ssCommas,sCommas,','))
-	{	
-		std::istringstream ssSemis(sCommas);
-		std::string sSemis;
-		while(std::getline(ssSemis,sSemis,';'))
-		{	
-			std::istringstream ssMinus(sSemis);
-			std::string sMinus;
-
-			std::vector<uint8_t> tempArgs;
-			while(std::getline(ssMinus,sMinus,'-'))
-			{
-				int arg;
-				std::stringstream ssArg(sMinus);
-				ssArg >> arg;
-				tempArgs.push_back(static_cast<uint8_t>(arg));
-			}
-			if(tempArgs.empty())
-				continue;	// be nice
-			if(tempArgs.size() == 1)
-				target.push_back(tempArgs[0]);
-			else if(tempArgs.size() == 2)
-			{
-				const auto start = std::min(tempArgs[0], tempArgs[1]);
-				const auto end = std::max(tempArgs[0], tempArgs[1]);
-				if(start == end)
-					target.push_back(start);
-				else
-					for(auto i=start; i<=end; ++i)
-						target.push_back(i);
-			}
-			else
-			{
-				// but don't be nice here
-				throw std::exception((std::string("Invalid argument ") + sSemis + ", expected range in form x-y").c_str());
-			}
-		}
-	}
-	
-	return target;
 }
 
 void Cli::printUsage()

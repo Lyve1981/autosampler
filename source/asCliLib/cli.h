@@ -10,6 +10,31 @@
 
 namespace asCli
 {
+
+template<typename T> static T parse(const std::string& _input)
+{
+	std::stringstream ss(_input);
+	T target;
+	ss >> target;
+	return target;
+}
+
+template<> std::string  parse<std::string>(const std::string& _input)
+{
+	return _input;
+}
+
+template<> bool  parse<bool>(const std::string& _input)
+{
+	auto in(_input);
+	std::transform(in.begin(), in.end(), in.begin(), ::tolower);
+	if(in == "true" || in == "1" || atoi(in.c_str()) > 0)
+		return true;
+	return false;
+}
+
+template<> std::vector<uint8_t>  parse< std::vector<uint8_t> >(const std::string& _input);
+
 class Cli
 {
 	struct Arg
@@ -49,30 +74,6 @@ private:
 		return _value ? "1" : "0";
 	}
 
-	template<typename T> static T parse(const std::string& _input)
-	{
-		std::stringstream ss(_input);
-		T target;
-		ss >> target;
-		return target;
-	}
-
-	template<> static std::string parse<std::string>(const std::string& _input)
-	{
-		return _input;
-	}
-
-	template<> static bool parse<bool>(const std::string& _input)
-	{
-		auto in(_input);
-		std::transform(in.begin(), in.end(), in.begin(), ::tolower);
-		if(in == "true" || in == "1" || atoi(in.c_str()) > 0)
-			return true;
-		return false;
-	}
-
-	template<> static std::vector<uint8_t> parse< std::vector<uint8_t> >(const std::string& _input);
-
 	template<typename T> bool registerArgument(const char* _name, T& _target, const char* _description, bool _optional, const std::vector<std::string>& _examples, const std::string& _default = std::string())
 	{
 		Arg arg{};
@@ -94,7 +95,7 @@ private:
 		{
 			std::stringstream ss;
 			ss << "Argument '" << _name << "' is required but was not specified";
-			throw std::exception(ss.str().c_str());
+			throw std::runtime_error(ss.str().c_str());
 		}
 
 		return true;
@@ -104,4 +105,5 @@ private:
 	asLib::Config m_config;
 	std::vector<Arg> m_arguments;
 };
+
 }

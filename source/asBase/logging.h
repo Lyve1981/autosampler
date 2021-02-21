@@ -9,7 +9,7 @@ namespace asBase
 #ifdef _WIN32
 	void g_logWin32( const std::string& _s );
 
-	#define LOGWIN32(ss)	{ asBase::g_logWin32( (ss).str() ); }
+	#define DO_LOG(ss)	{ asBase::g_logWin32( (ss).str() ); }
 #else
 	void g_logUnix( const std::string& _s );
 
@@ -20,7 +20,7 @@ namespace asBase
 {																															\
 	std::stringstream ss;	ss << __FUNCTION__ << "@" << __LINE__ << ": " << S;												\
 																															\
-	LOGWIN32(ss)																											\
+	DO_LOG(ss)																											\
 }
 
 }

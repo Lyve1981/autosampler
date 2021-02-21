@@ -21,10 +21,10 @@ enum ErrorType
 	ErrFileIO,
 };
 
-class Error final : public std::exception
+class Error final : public std::runtime_error
 {
 public:
-	Error(ErrorType _type, const std::string& _message) : std::exception(_message.c_str()), m_errorType(_type) {}
+	Error(ErrorType _type, const std::string& _message) : std::runtime_error(_message.c_str()), m_errorType(_type) {}
 	Error(ErrorType _type, const std::stringstream& _message) : Error(_type, _message.str()) {}
 
 	ErrorType getErrorType() const { return m_errorType; }

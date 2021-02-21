@@ -14,8 +14,13 @@
 #include <thread>
 #include <utility>
 #include <vector>
-#include <direct.h>
 
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#define _mkdir(PATH) mkdir(PATH, 660)
+#endif
 
 #include "wavWriter.h"
 #include "../asBase/logging.h"
@@ -86,7 +91,7 @@ void createDirectoryRecursive(const std::string& filename)
 		if(path.back() == ':')
 			continue;	// skip windows drive letter
 
-		::_mkdir(path.c_str());		
+		_mkdir(path.c_str());		
 	}
 }
 
@@ -457,7 +462,7 @@ bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)
 				{
 					for(size_t c=0; c<m_audioData->getChannelCount(); ++c)
 					{
-						const auto g = std::fabsf(m_audioData->floatValue(f, c));
+						const auto g = std::abs(m_audioData->floatValue(f, c));
 						gain = std::max(g, gain);						
 					}
 				}
