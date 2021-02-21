@@ -332,6 +332,20 @@ void AutoSampler::setState(State _state)
 		break;
 	case Sustain:
 		{
+			if(m_config.skipExistingFiles)
+			{
+				const auto filename = createFilename();
+
+				FILE* hFile = fopen(filename.c_str(), "rb");
+				if(hFile)
+				{
+					fclose(hFile);
+					LOG("Skipping file " << filename << ", already exists");
+					setState(PauseBefore);
+					return;
+				}
+			}
+
 			m_audioData->clear();
 			auto note = m_config.noteNumbers[m_currentNote];
 			auto velocity = m_config.velocities[m_currentVelocity];
@@ -370,29 +384,10 @@ void AutoSampler::setState(State _state)
 	}
 }
 
-void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _velocity)
+void AutoSampler::writeWaveFile(AudioData* _data, int _programIndex, int _noteIndex, int _velocity)
 {
-	_program = m_config.programChanges.empty() ? 0 : m_config.programChanges[_program];
-	_note = m_config.noteNumbers[_note];
-	_velocity = m_config.velocities[_velocity];
-
-	auto filename = m_config.filename;
-
-	{
-		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << _program;
-		strreplace(filename, "{program}", ss.str());
-	}
-	{
-		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << _note;
-		strreplace(filename, "{note}", ss.str());
-	}
-	{
-		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << _velocity;
-		strreplace(filename, "{velocity}", ss.str());
-	}
-
-	strreplace(filename, "{key}", noteToString(static_cast<uint8_t>(_note)));
-
+	const auto filename = createFilename(_noteIndex, _velocity, _programIndex);
+	
 	createDirectoryRecursive(filename);
 
 	_data->trimStart(m_noiseFloor * 1.05f);
@@ -417,6 +412,32 @@ void AutoSampler::writeWaveFile(AudioData* _data, int _program, int _note, int _
 	auto it = m_pendingWrites.find(_data);
 	assert(it != m_pendingWrites.end());
 	it->second.data.reset();	
+}
+
+std::string AutoSampler::createFilename(int _noteIndex, int _velocityIndex, int _programIndex) const
+{
+	auto program = m_config.programChanges.empty() ? 0 : m_config.programChanges[_programIndex];
+	auto note = m_config.noteNumbers[_noteIndex];
+	auto velocity = m_config.velocities[_velocityIndex];
+
+	auto filename = m_config.filename;
+
+	{
+		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << static_cast<int>(program);
+		strreplace(filename, "{program}", ss.str());
+	}
+	{
+		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << static_cast<int>(note);
+		strreplace(filename, "{note}", ss.str());
+	}
+	{
+		std::stringstream ss; ss << std::setw(3) << std::setfill('0') << static_cast<int>(velocity);
+		strreplace(filename, "{velocity}", ss.str());
+	}
+
+	strreplace(filename, "{key}", noteToString(note));
+
+	return filename;
 }
 
 bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)

@@ -29,7 +29,13 @@ public:
 	void run();
 	bool audioInputCallback(const void* _input, size_t _frameCount);
 
-	void writeWaveFile(AudioData* _data, int _program, int _note, int _velocity);
+	void writeWaveFile(AudioData* _data, int _programIndex, int _noteIndex, int _velocityIndex);
+
+	std::string createFilename(int _noteIndex, int _velocityIndex, int _programIndex) const;
+	std::string createFilename() const
+	{
+		return createFilename(m_currentNote, m_currentVelocity, m_currentProgram);
+	}
 	
 private:
 	void initAudioInput();

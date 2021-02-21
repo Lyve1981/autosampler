@@ -36,5 +36,6 @@ struct Config
 
 	// I/O
 	std::string filename = "";
+	bool skipExistingFiles = true;
 };
 }
