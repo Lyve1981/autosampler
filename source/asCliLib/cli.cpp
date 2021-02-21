@@ -5,8 +5,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "../lib/autosampler.h"
-#include "../lib/error.h"
+#include "../asLib/autosampler.h"
+#include "../asLib/error.h"
 
 namespace asCli
 {

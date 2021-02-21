@@ -11,14 +11,14 @@ add_subdirectory(portaudio)
 add_subdirectory(portmidi)
 
 # own
-add_subdirectory(base)
-add_subdirectory(lib)
-add_subdirectory(cli)
+add_subdirectory(asBase)
+add_subdirectory(asLib)
+add_subdirectory(asCliLib)
 
 # ----------------- command-line app
 
 add_executable(ascli)
 
-target_sources(ascli PRIVATE cli/main.cpp)
+target_sources(ascli PRIVATE asCliLib/main.cpp)
 
-target_link_libraries(ascli cli)
+target_link_libraries(ascli asCliLib)

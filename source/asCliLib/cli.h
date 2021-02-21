@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "commandline.h"
-#include "../lib/config.h"
+#include "../asLib/config.h"
 
 #include <sstream>
 #include <string>
