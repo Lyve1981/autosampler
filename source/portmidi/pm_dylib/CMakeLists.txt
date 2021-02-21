@@ -57,30 +57,33 @@ if(UNIX)
                              ${COREMIDI_LIB} ${CORESERVICES_LIB}
         CACHE INTERNAL "")
 
-    set(JAVAVM_LIB "${FRAMEWORK_PATH}/JavaVM.framework")
-    set(JAVA_INCLUDE_PATHS ${JAVAVM_LIB}/Headers)
-    set(INSTALL_NAME_DIR "/usr/local/lib")
-    message(STATUS "SYSROOT: " ${CMAKE_OSX_SYSROOT})
+    if(PMJAVA)
+        set(JAVAVM_LIB "${FRAMEWORK_PATH}/JavaVM.framework")
+        set(JAVA_INCLUDE_PATHS ${JAVAVM_LIB}/Headers)
+        set(INSTALL_NAME_DIR "/usr/local/lib")
+        message(STATUS "SYSROOT: " ${CMAKE_OSX_SYSROOT})
+    endif()
   else(APPLE)
     # LINUX settings...
-    include(FindJNI)
-    # message(STATUS "JAVA_JVM_LIB_PATH is " ${JAVA_JVM_LIB_PATH})
-    # message(STATUS "JAVA_INCLUDE_PATH is " ${JAVA_INCLUDE_PATH})
-    # note: should use JAVA_JVM_LIB_PATH, but it is not set properly
-    # note: user might need to set JAVA_INCLUDE_PATH manually
-    #
-    # this will probably break on BSD and other Unix systems; the fix
-    # depends on whether FindJNI can find Java or not. If yes, then
-    # we should try to rely on automatically set JAVA_INCLUDE_PATH and
-    # JAVA_INCLUDE_PATH2; if no, then we need to make both JAVA_INCLUDE_PATH
-    # and JAVA_INCLUDE_PATH2 set by user (will need clear documentation
-    # because JAVA_INCLUDE_PATH2 is pretty obscure)
-    set(JAVA_INCLUDE_PATH  ${JAVA_INCLUDE_PATH-UNKNOWN}
-        CACHE STRING "where to find Java SDK include directory")
-    set(JAVA_INCLUDE_PATHS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH}/linux)
-    # libjvm.so is found relative to JAVA_INCLUDE_PATH:
-    set(JAVAVM_LIB ${JAVA_INCLUDE_PATH}/../jre/lib/i386/client/libjvm.so)
-
+    if(PMJAVA)
+        include(FindJNI)
+        # message(STATUS "JAVA_JVM_LIB_PATH is " ${JAVA_JVM_LIB_PATH})
+        # message(STATUS "JAVA_INCLUDE_PATH is " ${JAVA_INCLUDE_PATH})
+        # note: should use JAVA_JVM_LIB_PATH, but it is not set properly
+        # note: user might need to set JAVA_INCLUDE_PATH manually
+        #
+        # this will probably break on BSD and other Unix systems; the fix
+        # depends on whether FindJNI can find Java or not. If yes, then
+        # we should try to rely on automatically set JAVA_INCLUDE_PATH and
+        # JAVA_INCLUDE_PATH2; if no, then we need to make both JAVA_INCLUDE_PATH
+        # and JAVA_INCLUDE_PATH2 set by user (will need clear documentation
+        # because JAVA_INCLUDE_PATH2 is pretty obscure)
+        set(JAVA_INCLUDE_PATH  ${JAVA_INCLUDE_PATH-UNKNOWN}
+            CACHE STRING "where to find Java SDK include directory")
+        set(JAVA_INCLUDE_PATHS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH}/linux)
+        # libjvm.so is found relative to JAVA_INCLUDE_PATH:
+        set(JAVAVM_LIB ${JAVA_INCLUDE_PATH}/../jre/lib/i386/client/libjvm.so)
+    endif()
     set(LINUXSRC pmlinuxalsa pmlinux finddefault)
     prepend_path(LIBSRC ../pm_linux/ ${LINUXSRC})
     list(APPEND LIBSRC ../porttime/ptlinux)
@@ -91,22 +94,28 @@ else(UNIX)
   if(WIN32)
     # /MDd is multithread debug DLL, /MTd is multithread debug
     # /MD is multithread DLL, /MT is multithread 
-    
-    include(FindJNI)
-    # note: should use JAVA_JVM_LIB_PATH, but it is not set properly
-    set(JAVAVM_LIB ${JAVA_INCLUDE_PATH}/../lib/jvm.lib)
 
-    set(JAVA_INCLUDE_PATHS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
-    # message(STATUS "JAVA_INCLUDE_PATHS: " ${JAVA_INCLUDE_PATHS})
+    if(PMJAVA)
+        include(FindJNI)
+        # note: should use JAVA_JVM_LIB_PATH, but it is not set properly
+        set(JAVAVM_LIB ${JAVA_INCLUDE_PATH}/../lib/jvm.lib)
+
+        set(JAVA_INCLUDE_PATHS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
+        # message(STATUS "JAVA_INCLUDE_PATHS: " ${JAVA_INCLUDE_PATHS})
+    endif()
 
     set(WINSRC pmwin pmwinmm)
     prepend_path(LIBSRC ../pm_win/ ${WINSRC})
     list(APPEND LIBSRC ../porttime/ptwinmm)
     set(PM_NEEDED_LIBS winmm.lib)
-    # message(STATUS "JAVAVM_LIB: " ${JAVAVM_LIB})
+    if(PMJAVA)
+        # message(STATUS "JAVAVM_LIB: " ${JAVAVM_LIB})
+    endif()
   endif(WIN32)
 endif(UNIX)
-set(JNI_EXTRA_LIBS ${PM_NEEDED_LIBS} ${JAVAVM_LIB})
+if(PMJAVA)
+    set(JNI_EXTRA_LIBS ${PM_NEEDED_LIBS} ${JAVAVM_LIB})
+endif()
 
 # this completes the list of library sources by adding shared code
 set(SHARED_FILES pmutil portmidi)
