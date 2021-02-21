@@ -51,6 +51,8 @@ int Cli::run()
 			"{program} Program change in range 0-127"
 			, true, {"~/autosampler/device/patch{program}/{note}_{key}_{velocity}.wav"});
 
+		registerArgument("skip-existing", m_config.skipExistingFiles, "Skip existing files that already exist on disk.", true, {"1","0"});
+
 		// further validation
 		if(m_config.filename.empty())
 			throw std::exception("Filename must not be empty");

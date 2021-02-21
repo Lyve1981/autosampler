@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 #include "commandline.h"
 #include "../lib/config.h"
 
@@ -42,6 +44,11 @@ private:
 		return ss.str();
 	}
 
+	static std::string toString(const bool& _value)
+	{
+		return _value ? "1" : "0";
+	}
+
 	template<typename T> static T parse(const std::string& _input)
 	{
 		std::stringstream ss(_input);
@@ -53,6 +60,15 @@ private:
 	template<> static std::string parse<std::string>(const std::string& _input)
 	{
 		return _input;
+	}
+
+	template<> static bool parse<bool>(const std::string& _input)
+	{
+		auto in(_input);
+		std::transform(in.begin(), in.end(), in.begin(), ::tolower);
+		if(in == "true" || in == "1" || atoi(in.c_str()) > 0)
+			return true;
+		return false;
 	}
 
 	template<> static std::vector<uint8_t> parse< std::vector<uint8_t> >(const std::string& _input);
