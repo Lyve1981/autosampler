@@ -127,7 +127,7 @@ if(PMJAVA)
 endif()
 
 # install the libraries (Linux and Mac OS X command line)
-if(UNIX)
+if(UNIX AND PMJAVA)
   INSTALL(TARGETS portmidi-static pmjni
     LIBRARY DESTINATION /usr/local/lib
     ARCHIVE DESTINATION /usr/local/lib)
