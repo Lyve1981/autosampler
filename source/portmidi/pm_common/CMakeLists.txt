@@ -3,20 +3,6 @@
 # set the build directory for libportmidi.a to be in portmidi, not in 
 #    portmidi/pm_common
 if(APPLE OR WIN32)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  # set the build directory for .dylib libraries
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-
-  # the first time CMake configures, save off CMake's built-in flags
-  if(NOT DEFAULT_DEBUG_FLAGS)
-    set(DEFAULT_DEBUG_FLAGS ${CMAKE_C_FLAGS_DEBUG} CACHE 
-        STRING "CMake's default debug flags" FORCE)
-    set(DEFAULT_RELEASE_FLAGS ${CMAKE_C_FLAGS_RELEASE} CACHE 
-        STRING "CMake's default release flags" FORCE)
-  else(NOT DEFAULT_DEBUG_FLAGS)
-    message(STATUS "DEFAULT_DEBUG_FLAGS not nil: " ${DEFAULT_DEBUG_FLAGS})
-  endif(NOT DEFAULT_DEBUG_FLAGS)
 else(APPLE OR WIN32)
   set(LINUX_FLAGS "-DPMALSA")
 endif(APPLE OR WIN32)
@@ -35,18 +21,8 @@ macro(prepend_path RESULT PATH)
   endforeach(FILE)
 endmacro(prepend_path)
 
-set(CMAKE_C_FLAGS_DEBUG 
-    "${DEFAULT_DEBUG_FLAGS} -DPM_CHECK_ERRORS=1 -DDEBUG ${LINUX_FLAGS}"
-    CACHE STRING "enable extra checks for debugging" FORCE)
-
-set(CMAKE_C_FLAGS_RELEASE "${DEFAULT_RELEASE_FLAGS} ${LINUX_FLAGS}"
-    CACHE STRING "flags for release version" FORCE)
-
 # first include the appropriate system-dependent file:
 if(UNIX)
-  # add the -g switch for Linux and Mac OS X (not used in Win32)
-  set (CMAKE_C_FLAGS_DEBUG "-g ${CMAKE_C_FLAGS_DEBUG}" 
-       CACHE STRING "enable extra checks for debugging" FORCE)
   if(APPLE)
     set(MACSRC pmmacosxcm pmmac readbinaryplist finddefault)
     prepend_path(LIBSRC ../pm_mac/ ${MACSRC})
