@@ -23,4 +23,3 @@ jobs:
         cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
         useVcpkgToolchainFile: false
         buildDirectory: '${{ runner.workspace }}/b'
-libalsa-ocaml-dev
