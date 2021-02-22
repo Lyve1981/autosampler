@@ -332,6 +332,10 @@ void AutoSampler::setState(State _state)
 						sendMidi(M_PROGRAMCHANGE, program, 0);
 					}
 				}
+				else if(m_currentProgram > 0)
+				{
+					setState(Finished);
+				}
 			}
 		}
 		break;
