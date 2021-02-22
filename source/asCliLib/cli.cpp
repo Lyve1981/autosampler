@@ -124,6 +124,11 @@ int Cli::run()
 			if(p > 127)
 				throw std::runtime_error("Program changes must be in range 0-127");
 		}
+
+		if (m_config.pauseBefore < 0.1f)
+			m_config.pauseBefore = 0.1f;
+		if (m_config.pauseAfter < 0.1f)
+			m_config.pauseAfter = 0.1f;
 	}
 	catch (const std::exception& e)
 	{
