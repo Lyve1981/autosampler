@@ -110,4 +110,4 @@ if(UNIX AND PMJAVA)
 # .h files installed by pm_dylib/CMakeLists.txt, so don't need them here
 #  INSTALL(FILES portmidi.h ../porttime/porttime.h
 #    DESTINATION /usr/local/include)
-endif(UNIX)
+endif(UNIX AND PMJAVA)
