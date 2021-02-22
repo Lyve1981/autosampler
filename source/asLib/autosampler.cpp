@@ -105,11 +105,23 @@ std::string noteToString(uint8_t _note)
 	std::stringstream ss; ss << keys[n] << (octave - 2);	// C-2 to G8
 	return ss.str();
 }
+	
+static bool s_apisInitialized;
+
+static void initApis()
+{
+	if(s_apisInitialized)
+		return;
+	
+	Pa_Initialize();
+	Pm_Initialize();
+
+	s_apisInitialized = true;	
+}
 
 AutoSampler::AutoSampler(Config _config) : m_config(std::move(_config))
 {
-	Pa_Initialize();
-	Pm_Initialize();
+	initApis();
 
 	initMidiOutput();
 
@@ -149,6 +161,8 @@ AutoSampler::~AutoSampler()
 
 	Pm_Terminate();
 	Pa_Terminate();
+
+	s_apisInitialized = false;
 }
 
 void AutoSampler::run()
@@ -179,29 +193,28 @@ void AutoSampler::run()
 
 void AutoSampler::initAudioInput()
 {
-	const auto devCount = Pa_GetDeviceCount();
+	std::vector<AudioDeviceInfo> audioDevices;
+	getAudioInputs(audioDevices);
 
 	std::vector<PaDeviceIndex> matchingDevices;
-	matchingDevices.reserve(devCount);
+	matchingDevices.reserve(audioDevices.size());
 	
-	for (auto i = 0; i < devCount; ++i)
+	for (auto i = 0; i < audioDevices.size(); ++i)
 	{
-		const auto* devInfo = Pa_GetDeviceInfo(i);
+		const auto& devInfo = audioDevices[i];
 
-		if(devInfo->maxInputChannels <= m_config.inputChannels)
+		if(devInfo.maxChannels <= m_config.inputChannels)
 			continue;
 
-		if(!m_config.inputDevice.empty() && !strequal(m_config.inputDevice, devInfo->name) != 0)
+		if(!m_config.inputDevice.empty() && !strequal(m_config.inputDevice, devInfo.name) != 0)
 			continue;
 
-		const auto* hostApi = Pa_GetHostApiInfo(devInfo->hostApi);
-
-		if(!m_config.inputHostApi.empty() && !strequal(m_config.inputHostApi, hostApi->name) != 0)
+		if(!m_config.inputHostApi.empty() && !strequal(m_config.inputHostApi, devInfo.api) != 0)
 			continue;
 
-		LOG("Audio Input Device " << i << " [" << hostApi->name << "]: " << devInfo->name << ", default samplerate " << devInfo->defaultSampleRate << ", max input channels " << devInfo->maxInputChannels)
+		LOG("Audio Input Device " << i << " [" << devInfo.api << "]: " << devInfo.name << ", default samplerate " << devInfo.maxSamplerate << ", max input channels " << devInfo.maxChannels)
 
-		matchingDevices.push_back(i);
+		matchingDevices.push_back(devInfo.id);
 	}
 
 	if(matchingDevices.empty())
@@ -244,26 +257,24 @@ void AutoSampler::initAudioInput()
 
 void AutoSampler::initMidiOutput()
 {
-	const auto devCount = Pm_CountDevices();
+	std::vector<DeviceInfo> midiDevices;
+	getMidiOutputs(midiDevices);
 
 	std::vector<int> matchingDevices;
 
-	for(auto i=0; i<devCount; ++i)
+	for(auto i=0; i<midiDevices.size(); ++i)
 	{
-		const auto* devInfo = Pm_GetDeviceInfo(i);
+		const auto& devInfo = midiDevices[i];
 
-		if(!devInfo->output)
+		if(!m_config.midiOutputDevice.empty() && !strequal(m_config.midiOutputDevice, devInfo.name) != 0)
 			continue;
 
-		if(!m_config.midiOutputDevice.empty() && !strequal(m_config.midiOutputDevice, devInfo->name) != 0)
+		if(!m_config.midiOutputApi.empty() && !strequal(m_config.midiOutputApi, devInfo.api) != 0)
 			continue;
 
-		if(!m_config.midiOutputApi.empty() && !strequal(m_config.midiOutputApi, devInfo->interf) != 0)
-			continue;
+		LOG("MIDI device " << i << ": [" << devInfo.api << "]: " << devInfo.name);
 
-		LOG("MIDI device " << i << ": [" << devInfo->interf << "]: " << devInfo->name);
-
-		matchingDevices.push_back(i);
+		matchingDevices.push_back(devInfo.id);
 	}
 
 	if(matchingDevices.empty())
@@ -447,6 +458,68 @@ std::string AutoSampler::createFilename(int _noteIndex, int _velocityIndex, int 
 	strreplace(filename, "{key}", noteToString(note));
 
 	return filename;
+}
+
+bool AutoSampler::getAudioInputs(std::vector<AudioDeviceInfo>& _audioInputs)
+{
+	initApis();
+	
+	const auto devCount = Pa_GetDeviceCount();
+
+	if(devCount < 0)
+		return false;
+
+	_audioInputs.reserve(devCount);
+
+	for (auto i = 0; i < devCount; ++i)
+	{
+		const auto* devInfo = Pa_GetDeviceInfo(i);
+		const auto* hostApi = Pa_GetHostApiInfo(devInfo->hostApi);
+
+		if(devInfo->maxInputChannels <= 0)
+			continue;
+
+		AudioDeviceInfo di;
+		
+		di.name = devInfo->name;
+		di.api = hostApi->name;
+		di.id = i;
+
+		di.maxChannels = devInfo->maxInputChannels;
+		di.maxSamplerate = static_cast<int>(devInfo->defaultSampleRate);
+
+		_audioInputs.emplace_back(std::move(di));
+	}
+
+	return true;
+}
+
+bool AutoSampler::getMidiOutputs(std::vector<DeviceInfo>& _midiOutputs)
+{
+	initApis();
+
+	const auto devCount = Pm_CountDevices();
+
+	if(devCount < 0)
+		return false;
+
+	std::vector<int> matchingDevices;
+
+	for(auto i=0; i<devCount; ++i)
+	{
+		const auto* devInfo = Pm_GetDeviceInfo(i);
+
+		if(!devInfo->output)
+			continue;
+
+		DeviceInfo di;
+		di.name = devInfo->name;
+		di.api = devInfo->interf;
+		di.id = i;
+
+		_midiOutputs.emplace_back(std::move(di));
+	}
+	return true;
 }
 
 bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)

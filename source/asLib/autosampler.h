@@ -4,7 +4,6 @@
 #include <mutex>
 #include <thread>
 
-
 #include "audioData.h"
 #include "config.h"
 
@@ -22,8 +21,20 @@ class AutoSampler
 		PauseAfter,
 		Finished,
 	};
-	
 public:
+	struct DeviceInfo
+	{
+		std::string name;
+		std::string api;
+		int id;
+	};
+
+	struct AudioDeviceInfo : DeviceInfo
+	{
+		int maxChannels;
+		int maxSamplerate;
+	};
+
 	explicit AutoSampler(Config _config);
 	virtual ~AutoSampler();
 	void run();
@@ -36,6 +47,9 @@ public:
 	{
 		return createFilename(m_currentNote, m_currentVelocity, m_currentProgram);
 	}
+
+	static bool getAudioInputs(std::vector<AudioDeviceInfo>& _audioInputs);
+	static bool getMidiOutputs(std::vector<DeviceInfo>& _midiOutputs);
 	
 private:
 	void initAudioInput();

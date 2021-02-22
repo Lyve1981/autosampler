@@ -265,8 +265,27 @@ void Cli::printUsage()
 		std::cout << std::endl;
 	}
 
-	for (const auto& arg : m_arguments)
-		longestArg = std::max(arg.name.length(), longestArg);
+	std::cout << std::endl;
+	std::cout << "Available audio inputs:" << std::endl;
+	std::cout << std::endl;
+
+	std::vector<asLib::AutoSampler::AudioDeviceInfo> audioInterfaces;
+	asLib::AutoSampler::getAudioInputs(audioInterfaces);
+
+	for (const auto& devInfo : audioInterfaces)
+		std::cout << "Device " << devInfo.id << " [" << devInfo.api << "]: " << devInfo.name << ", default samplerate " << devInfo.maxSamplerate << ", max input channels " << devInfo.maxChannels << std::endl;
+
+	std::cout << std::endl;
+	std::cout << "Available MIDI outputs:" << std::endl;
+	std::cout << std::endl;
+
+	std::vector<asLib::AutoSampler::DeviceInfo> midiInterfaces;
+	asLib::AutoSampler::getMidiOutputs(midiInterfaces);
+
+	for (const auto& devInfo : midiInterfaces)
+		std::cout << "MIDI device " << devInfo.id << ": [" << devInfo.api << "]: " << devInfo.name << std::endl;
+
+	std::cout << std::endl;
 }
 
 
