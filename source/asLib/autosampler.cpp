@@ -22,6 +22,8 @@
 #define _mkdir(PATH) mkdir(PATH, 660)
 #endif
 
+#include <iostream>
+
 #include "wavWriter.h"
 #include "../asBase/logging.h"
 
@@ -31,6 +33,9 @@
 
 namespace asLib
 {
+constexpr float g_noiseFloorFactor = 1.25f;
+constexpr uint8_t g_programChangeNone = 0xff;
+	
 static int portAudioCallback(const void* _inputBuffer, void*, const unsigned long _framesPerBuffer, const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags, void* _userData)
 {
 	auto* sampler = static_cast<AutoSampler*>(_userData);
@@ -123,6 +128,8 @@ AutoSampler::AutoSampler(Config _config) : m_config(std::move(_config))
 {
 	initApis();
 
+	generateVoices();
+
 	initMidiOutput();
 
 	initAudioInput();
@@ -134,11 +141,6 @@ AutoSampler::AutoSampler(Config _config) : m_config(std::move(_config))
 	m_pauseAfter = static_cast<int>(m_config.pauseAfter * m_samplerate);
 
 	m_audioData->reserve((m_sustainLength + m_releaseLength) << 1);	 // a bit extra, block size causes lengths to be exceeded
-
-	m_currentProgram = -1;
-
-	m_currentNote = static_cast<int>(m_config.noteNumbers.size());
-	m_currentVelocity = static_cast<int>(m_config.velocities.size());
 
 	setState(DetectNoiseFloor);
 
@@ -317,65 +319,36 @@ void AutoSampler::setState(State _state)
 		m_audioData->clear();
 		break;
 	case PauseBefore:
-		m_audioData->clear();
-		++m_currentNote;
-
-		if(m_currentNote >= m_config.noteNumbers.size())
 		{
-			m_currentNote = 0;
-			++m_currentVelocity;
+			m_audioData->clear();
 
-			if(m_currentVelocity >= m_config.velocities.size())
+			auto program = m_voices[m_currentVoice].program;
+
+			if(program != g_programChangeNone)
 			{
-				m_currentVelocity = 0;
-				++m_currentProgram;
-
-				if(!m_config.programChanges.empty())
+				if(m_currentVoice == 0 || program != m_voices[m_currentVoice-1].program)
 				{
-					if(m_currentProgram >= m_config.programChanges.size())
-					{
-						setState(Finished);
-					}
-					else
-					{
-						auto program = m_config.programChanges[m_currentProgram];
-						LOG("Sending program change " << static_cast<int>(program));
-						sendMidi(M_PROGRAMCHANGE, program, 0);
-					}
-				}
-				else if(m_currentProgram > 0)
-				{
-					setState(Finished);
+					LOG("Sending program change " << static_cast<int>(program));
+					sendMidi(M_PROGRAMCHANGE, program, 0);
 				}
 			}
 		}
 		break;
 	case Sustain:
 		{
-			if(m_config.skipExistingFiles)
-			{
-				const auto filename = createFilename();
-
-				FILE* hFile = fopen(filename.c_str(), "rb");
-				if(hFile)
-				{
-					fclose(hFile);
-					LOG("Skipping file " << filename << ", already exists");
-					setState(PauseBefore);
-					return;
-				}
-			}
+			const auto& voice = m_voices[m_currentVoice];
 
 			m_audioData->clear();
-			auto note = m_config.noteNumbers[m_currentNote];
-			auto velocity = m_config.velocities[m_currentVelocity];
+			auto note = voice.note;
+			auto velocity = voice.velocity;
 			LOG("Sending Note ON for note " << noteToString(note) << " (" << static_cast<int>(note) << "), velocity " << static_cast<int>(velocity));
 			sendMidi(M_NOTEON, note, velocity);
 		}
 		break;
 	case Release:
 		{
-			auto note = m_config.noteNumbers[m_currentNote];
+			const auto& voice = m_voices[m_currentVoice];
+			auto note = voice.note;
 
 			LOG("Sending Note off for note " << noteToString(note) << " (" << static_cast<int>(note) << "), release velocity " << static_cast<int>(m_config.releaseVelocity));
 			sendMidi(M_NOTEOFF, note, m_config.releaseVelocity);
@@ -388,7 +361,7 @@ void AutoSampler::setState(State _state)
 			PendingWrite pendingWrite;
 
 			pendingWrite.data.reset(data);
-			pendingWrite.thread.reset(new std::thread(&AutoSampler::writeWaveFile, this, pendingWrite.data.get(), m_currentProgram, m_currentNote, m_currentVelocity));
+			pendingWrite.thread.reset(new std::thread(&AutoSampler::writeWaveFile, this, pendingWrite.data.get(), m_voices[m_currentVoice]));
 
 			{
 				std::lock_guard<std::mutex> lockPendingWrites(m_lockPendingWrites);
@@ -404,14 +377,14 @@ void AutoSampler::setState(State _state)
 	}
 }
 
-void AutoSampler::writeWaveFile(AudioData* _data, int _programIndex, int _noteIndex, int _velocity)
+void AutoSampler::writeWaveFile(AudioData* _data, const Voice& voice)
 {
-	const auto filename = createFilename(_noteIndex, _velocity, _programIndex);
+	const auto filename = createFilename(voice);
 	
 	createDirectoryRecursive(filename);
 
-	_data->trimStart(m_noiseFloor * 1.05f);
-	_data->trimEnd(m_noiseFloor * 1.05f);
+	_data->trimStart(m_noiseFloor * g_noiseFloorFactor);
+	_data->trimEnd(m_noiseFloor * g_noiseFloorFactor);
 
 	if(!_data->empty())
 	{
@@ -434,11 +407,11 @@ void AutoSampler::writeWaveFile(AudioData* _data, int _programIndex, int _noteIn
 	it->second.data.reset();	
 }
 
-std::string AutoSampler::createFilename(int _noteIndex, int _velocityIndex, int _programIndex) const
+std::string AutoSampler::createFilename(const Voice& voice) const
 {
-	auto program = m_config.programChanges.empty() ? 0 : m_config.programChanges[_programIndex];
-	auto note = m_config.noteNumbers[_noteIndex];
-	auto velocity = m_config.velocities[_velocityIndex];
+	auto program = m_config.programChanges.empty() ? 0 : voice.program;
+	auto note = voice.note;
+	auto velocity = voice.velocity;
 
 	auto filename = m_config.filename;
 
@@ -565,12 +538,67 @@ bool AutoSampler::audioInputCallback(const void* _input, size_t _frameCount)
 			break;
 		case PauseAfter:
 			if(m_stateDurationInFrames >= m_pauseAfter)
-				setState(PauseBefore);
+			{
+				++m_currentVoice;
+				if(m_currentVoice < m_voices.size())
+					setState(PauseBefore);
+				else
+					setState(Finished);
+			}
 			break;
 		case Finished:
 			return false;	// stop
 	}
 
 	return true;	// want more
+}
+
+void AutoSampler::generateVoices()
+{
+	Voice voice;
+
+	auto permutateNoteAndVelocity = [&]()
+	{
+		for(auto v : m_config.velocities)
+		{
+			voice.velocity = v;
+
+			for(auto n : m_config.noteNumbers)
+			{
+				voice.note = n;
+
+				if(m_config.skipExistingFiles)
+				{
+					const auto filename = createFilename(voice);
+
+					FILE* hFile = fopen(filename.c_str(), "rb");
+					if(hFile)
+					{
+						fclose(hFile);
+						LOG("Skipping file " << filename << ", already exists")
+						continue;
+					}
+				}
+
+				m_voices.push_back(voice);
+			}
+		}		
+	};
+
+	if(m_config.programChanges.empty())
+	{
+		voice.program = g_programChangeNone;
+		permutateNoteAndVelocity();
+	}
+	else
+	{	
+		for(auto p : m_config.programChanges)
+		{
+			voice.program = p;
+			permutateNoteAndVelocity();
+		}
+	}
+
+	std::cout << m_voices.size() << " total voices remaining" << std::endl;
 }
 }

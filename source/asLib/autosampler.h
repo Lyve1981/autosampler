@@ -21,6 +21,14 @@ class AutoSampler
 		PauseAfter,
 		Finished,
 	};
+
+	struct Voice
+	{
+		int note = -1;
+		int velocity = -1;
+		int program = -1;
+	};
+
 public:
 	struct DeviceInfo
 	{
@@ -40,12 +48,12 @@ public:
 	void run();
 	bool audioInputCallback(const void* _input, size_t _frameCount);
 
-	void writeWaveFile(AudioData* _data, int _programIndex, int _noteIndex, int _velocityIndex);
+	void writeWaveFile(AudioData* _data, const Voice& voice);
 
-	std::string createFilename(int _noteIndex, int _velocityIndex, int _programIndex) const;
+	std::string createFilename(const Voice& _voice) const;
 	std::string createFilename() const
 	{
-		return createFilename(m_currentNote, m_currentVelocity, m_currentProgram);
+		return createFilename(m_voices[m_currentVoice]);
 	}
 
 	static bool getAudioInputs(std::vector<AudioDeviceInfo>& _audioInputs);
@@ -56,7 +64,8 @@ private:
 	void initMidiOutput();
 	void sendMidi(uint8_t a, uint8_t b, uint8_t c) const;
 	void setState(State _state);
-	
+	void generateVoices();
+
 	const Config m_config;
 	void* m_inputStream = nullptr;
 	void* m_outputStream = nullptr;
@@ -75,11 +84,10 @@ private:
 	size_t m_releaseLength = 0;
 	size_t m_pauseAfter = 0;
 
-	int m_currentNote = -1;
-	int m_currentVelocity = -1;
-	int m_currentProgram = -1;
-
 	float m_noiseFloor = 0.0f;
+
+	std::vector<Voice> m_voices;
+	size_t m_currentVoice = 0;
 
 	struct PendingWrite
 	{
