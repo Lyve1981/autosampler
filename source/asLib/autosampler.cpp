@@ -19,7 +19,7 @@
 #include <direct.h>
 #else
 #include <sys/stat.h>
-#define _mkdir(PATH) mkdir(PATH, 660)
+#define _mkdir(PATH) mkdir(PATH, 644)
 #endif
 
 #include <iostream>
